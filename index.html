@@ -124,7 +124,7 @@
         const atomicData = {
             "Pb": 207.2, "Al": 26.982, "Cl": 35.453, "N": 14.007, "O": 15.999,
             "Mg": 24.305, "Fe": 55.845, "Na": 22.990, "Ca": 40.078, "H": 1.008,
-            "S": 32.06, "K": 39.098, "Cu": 63.546, "Ag": 107.868, "Ba": 137.327
+            "S": 32.06, "K": 39.098, "Cu": 63.546, "Ag": 107.868, "Ba": 137.327, "C": 12.011
         };
 
         const reactions = [
@@ -133,6 +133,7 @@
                 coeffs: [3, 2, 2, 3],
                 type: "Double Displacement",
                 elements: {
+                    "Pb(NO3)2": { "Pb": 1, "N": 2, "O": 6 },
                     "PbCl2": { "Pb": 1, "Cl": 2 },
                     "AlCl3": { "Al": 1, "Cl": 3 }
                 }
@@ -142,6 +143,7 @@
                 coeffs: [2, 1, 1, 2],
                 type: "Double Displacement",
                 elements: {
+                    "AgNO3": { "Ag": 1, "N": 1, "O": 3 },
                     "AgCl": { "Ag": 1, "Cl": 1 },
                     "MgCl2": { "Mg": 1, "Cl": 2 }
                 }
@@ -149,10 +151,60 @@
             {
                 equation: ["NaOH", "H2SO4", "Na2SO4", "H2O"],
                 coeffs: [2, 1, 1, 2],
-                type: "Double Displacement", // Changed from Neutralization for grading compatibility
+                type: "Double Displacement",
                 elements: {
                     "NaOH": { "Na": 1, "O": 1, "H": 1 },
-                    "H2SO4": { "H": 2, "S": 1, "O": 4 }
+                    "Na2SO4": { "Na": 2, "S": 1, "O": 4 }
+                }
+            },
+            {
+                equation: ["Mg", "O2", "MgO"],
+                coeffs: [2, 1, 2],
+                type: "Synthesis",
+                elements: {
+                    "Mg": { "Mg": 1 },
+                    "O2": { "O": 2 },
+                    "MgO": { "Mg": 1, "O": 1 }
+                }
+            },
+            {
+                equation: ["KClO3", "KCl", "O2"],
+                coeffs: [2, 2, 3],
+                type: "Decomposition",
+                elements: {
+                    "KClO3": { "K": 1, "Cl": 1, "O": 3 },
+                    "KCl": { "K": 1, "Cl": 1 },
+                    "O2": { "O": 2 }
+                }
+            },
+            {
+                equation: ["Fe", "CuCl2", "FeCl2", "Cu"],
+                coeffs: [1, 1, 1, 1],
+                type: "Single Replacement",
+                elements: {
+                    "Fe": { "Fe": 1 },
+                    "CuCl2": { "Cu": 1, "Cl": 2 },
+                    "Cu": { "Cu": 1 }
+                }
+            },
+            {
+                equation: ["CH4", "O2", "CO2", "H2O"],
+                coeffs: [1, 2, 1, 2],
+                type: "Combustion",
+                elements: {
+                    "CH4": { "C": 1, "H": 4 },
+                    "CO2": { "C": 1, "O": 2 },
+                    "O2": { "O": 2 }
+                }
+            },
+            {
+                equation: ["Na", "Cl2", "NaCl"],
+                coeffs: [2, 1, 2],
+                type: "Synthesis",
+                elements: {
+                    "Na": { "Na": 1 },
+                    "Cl2": { "Cl": 2 },
+                    "NaCl": { "Na": 1, "Cl": 1 }
                 }
             }
         ];
@@ -186,8 +238,9 @@
             state.startingMass = (Math.random() * 40 + 10).toFixed(3);
             
             const subs = Object.keys(state.reaction.elements);
+            // Ensure we pick two different substances available in the MM data
             state.givenSub = subs[0];
-            state.findSub = subs[1];
+            state.findSub = subs[1] || subs[0]; 
             
             const givenMM = getMolarMass(state.givenSub);
             const findMM = getMolarMass(state.findSub);
@@ -216,7 +269,17 @@
                 span.innerHTML = formatFormula(formula);
                 eqDiv.appendChild(span);
                 
-                if (idx === 1) eqDiv.innerHTML += `<span class="px-4">→</span>`;
+                // Arrows for reactions. Determine midpoint based on number of products
+                // Simple heuristic: reactions in our list have a split at idx 1 or 2
+                const isTwoReactants = state.reaction.type !== "Decomposition" && state.reaction.equation.length > 2;
+                const arrowPos = state.reaction.type === "Decomposition" ? 0 : (state.reaction.type === "Synthesis" && state.reaction.equation.length === 3 ? 1 : 1);
+                
+                // For our specific list logic:
+                let currentArrowPos = 1;
+                if (state.reaction.type === "Decomposition") currentArrowPos = 0;
+                if (state.reaction.equation.length === 3 && state.reaction.type === "Synthesis") currentArrowPos = 1;
+
+                if (idx === currentArrowPos) eqDiv.innerHTML += `<span class="px-4">→</span>`;
                 else if (idx < state.reaction.equation.length - 1) eqDiv.innerHTML += `<span class="px-2">+</span>`;
             });
 
@@ -282,7 +345,7 @@
                 mmContainer.innerHTML += html;
             });
 
-            document.getElementById('problem-text').innerHTML = `How many grams of <b>${formatFormula(state.findSub)}</b> are produced/required if you start with <span class="text-red-600 font-black">${state.startingMass}</span> grams of <b>${formatFormula(state.givenSub)}</b>?`;
+            document.getElementById('problem-text').innerHTML = `How many grams of <b>${formatFormula(state.findSub)}</b> are involved if you start with <span class="text-red-600 font-black">${state.startingMass}</span> grams of <b>${formatFormula(state.givenSub)}</b>?`;
 
             const givenCoeff = state.reaction.coeffs[state.reaction.equation.indexOf(state.givenSub)];
             const findCoeff = state.reaction.coeffs[state.reaction.equation.indexOf(state.findSub)];
