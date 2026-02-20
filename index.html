@@ -79,7 +79,6 @@
                         <option value="Single Replacement">Single Replacement</option>
                         <option value="Double Displacement">Double Displacement</option>
                         <option value="Combustion">Combustion</option>
-                        <option value="Neutralization">Neutralization (Acid-Base)</option>
                     </select>
                 </div>
             </div>
@@ -150,7 +149,7 @@
             {
                 equation: ["NaOH", "H2SO4", "Na2SO4", "H2O"],
                 coeffs: [2, 1, 1, 2],
-                type: "Neutralization",
+                type: "Double Displacement", // Changed from Neutralization for grading compatibility
                 elements: {
                     "NaOH": { "Na": 1, "O": 1, "H": 1 },
                     "H2SO4": { "H": 2, "S": 1, "O": 4 }
